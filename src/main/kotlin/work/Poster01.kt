@@ -15,6 +15,7 @@ import org.openrndr.extra.compositor.post
 import org.openrndr.extra.fx.shadow.DropShadow
 import org.openrndr.extra.gui.GUI
 import org.openrndr.extra.gui.addTo
+import org.openrndr.extra.noise.uniform
 import org.openrndr.extra.parameters.ActionParameter
 import org.openrndr.extra.parameters.Description
 import org.openrndr.extras.imageFit.imageFit
@@ -70,18 +71,73 @@ fun main() = application {
                 var maxDuration = 240.0
                 var maxHeightSurface = height*0.9
                 var rowHeight: Double = 0.0
+                var columnNum: Double = 0.0
+                var rowNum = 0.0
+
+                var maxSpeechiness = 3500.0
+                var bpmDividend = 10.0
 
                 draw {
                     var rowY = 0.0
+                    var rowX = 0.0
+
+                    val rowCellX = mutableListOf<Int>()
+                    val rowCellY = mutableListOf<Int>()
 
                     drawer.fill = ColorRGBa.WHITE
+                    drawer.stroke = ColorRGBa.RED
+                    drawer.strokeWeight = 1.0
 
                     for (md in musicData) {
                         //calcoliamo l'altezza rowHeight in proporzione
                         rowHeight = ((150-md.duration)/(150-maxDuration))*(maxHeightSurface/musicData.size)
 
-                        drawer.rectangle(0.0, rowY, width * 1.0, rowHeight)
-                        rowY += rowHeight + 10.0
+                        //calcoliamo la divisione della riga partendo dai BPM
+                        columnNum = Math.floor(md.BPM/bpmDividend)
+                        rowNum = columnNum / 2.0
+
+
+
+                        //calcoliamo la percentuale di speechiness sul massimo
+                        var sp = md.speechiness/maxSpeechiness
+                        //numero di celle da colorare
+                        var cellColored = Math.floor(sp * rowNum * columnNum)
+
+                        for (i in 0 until columnNum.toInt()) {
+                            for (j in 0 until rowNum.toInt()) {
+                                rowCellX.add(i)
+                                rowCellY.add(j)
+                            }
+                        }
+
+                        for (i in 0 until cellColored.toInt()) {
+                            val rndNum = Int.uniform(0, rowCellX.size)
+
+                            drawer.rectangle(rowCellX[rndNum].toDouble()*(width/columnNum), rowCellY[rndNum].toDouble()*(rowHeight/rowNum), width / columnNum, rowHeight*sp )
+
+                            //splice from list
+                            rowCellX.removeAt(rndNum)
+                            rowCellY.removeAt(rndNum)
+                        }
+
+
+
+
+
+
+
+
+                        /*for (i in 0 until columnNum.toInt()) {
+                            drawer.rectangle(rowX, rowY, width / columnNum, rowHeight*sp)
+                            rowX += width/columnNum
+                        }
+
+
+
+                        rowX = 0.0
+
+                        //drawer.rectangle(0.0, rowY, width * 1.0, rowHeight)*/
+                        rowY += rowHeight
                     }
 
                 }
